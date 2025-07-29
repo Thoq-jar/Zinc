@@ -35,13 +35,22 @@ pub fn build(b: *std.Build) void {
 
     exe.linkLibC();
 
-    // Use specific SDL2 library paths to avoid duplicates
-    exe.addIncludePath(.{ .cwd_relative = "/opt/homebrew/include/SDL2" });
-    exe.addLibraryPath(.{ .cwd_relative = "/opt/homebrew/lib" });
+    const is_macos = target.result.os.tag == .macos;
+    const is_linux = target.result.os.tag == .linux;
 
-    // Link to specific library files instead of using linkSystemLibrary
-    exe.addObjectFile(.{ .cwd_relative = "/opt/homebrew/lib/libSDL2.dylib" });
-    exe.addObjectFile(.{ .cwd_relative = "/opt/homebrew/lib/libSDL2_ttf.dylib" });
+    if (is_macos) {
+        exe.addIncludePath(.{ .cwd_relative = "/opt/homebrew/include/SDL2" });
+        exe.addLibraryPath(.{ .cwd_relative = "/opt/homebrew/lib" });
+
+        exe.addObjectFile(.{ .cwd_relative = "/opt/homebrew/lib/libSDL2.dylib" });
+        exe.addObjectFile(.{ .cwd_relative = "/opt/homebrew/lib/libSDL2_ttf.dylib" });
+    } else if (is_linux) {
+        exe.addIncludePath(.{ .cwd_relative = "/usr/include/SDL2" });
+        exe.addLibraryPath(.{ .cwd_relative = "/usr/lib" });
+
+        exe.linkSystemLibrary("SDL2");
+        exe.linkSystemLibrary("SDL2_ttf");
+    }
 
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
